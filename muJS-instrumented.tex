@@ -1,0 +1,14 @@
+\begin{figure}
+\[\begin{array}{lcl}
+d \in D & := & \{!,?\} \\
+\hat{v} \in \widehat{\Value} & ::= & \mathit{pv}^d \mid a^d \mid (\kw{fun}(x)\>\{b\}, \hat{\rho})^d \\
+\hat{r} \in \widehat{\Record} & ::= & \{\overline{x\colon \hat{v}}\} \mid \{\overline{x\colon \hat{v}}, \ldots\}\\
+\hat{h} \in \widehat{\Heap} & := & \Address \rightharpoonup \widehat{\Record} \\
+\hat{\rho} \in \widehat{\Env} & := & \Name \rightharpoonup \widehat{\Value} \\
+\hat{e} \in \widehat{\Event} & ::= & x=\hat{v} \mid a^d[x^{d'}]=\hat{v} \mid \kw{if}(\hat{v})\{\hat{t}\} \\
+                             & \mid & (\kw{fun}(\hat{v})\{\hat{t}\})_{\hat{\rho}}^d \\
+\hat{t} \in \widehat{\Trace} & := & \overline{\hat{e}}
+\end{array}\]
+\caption{Instrumented semantic domains and traces}
+\label{fig:instrumented-domains}
+\end{figure}

@@ -1,0 +1,81 @@
+\begin{figure}
+\resizebox{0.9\columnwidth}{!}{%
+\vbox{%
+\begin{prooftree}
+\AxiomC{$x\in\dom(\hat{\rho})$}
+\LeftLabel{\hatrlname{LdLit}}\UnaryInfC{$\langle \hat{h},\hat{\rho},x=\mathit{pv}\rangle \hatred{n} \langle \hat{h},\hat{\rho}[x\mapsto\mathit{pv}^!],x=\mathit{pv}^!\rangle$}
+\end{prooftree}
+
+\ifdetails
+\begin{prooftree}
+\AxiomC{$F \equiv \kw{fun}(y)\>\{\>\kw{var}\>\overline{y};\>\overline{s};\>\kw{return}\>z;\>\} \quad x\in\dom(\hat{\rho})$}
+\LeftLabel{\hatrlname{LdClos}}\UnaryInfC{$\langle \hat{h},\hat{\rho},x=F\rangle \hatred{n} \langle \hat{h},\hat{\rho}[x\mapsto F, \hat{\rho})^!],x=(F, \hat{\rho})^!\rangle$}
+\end{prooftree}
+
+\begin{prooftree}
+\AxiomC{$x\in\dom(\hat{\rho}) \quad a\not\in\dom(\hat{h})$}
+\LeftLabel{\hatrlname{LdRec}} \UnaryInfC{$\langle \hat{h},\hat{\rho},x=\{\}\rangle\hatred{n}\langle \hat{h}[a\mapsto\{\}],\hat{\rho}[x\mapsto a^!],x=a^!\rangle$}
+\end{prooftree}
+
+\begin{prooftree}
+\AxiomC{$x\in\dom(\hat{\rho}) \quad \hat{\rho}(y)=\hat{v}$}
+\LeftLabel{\hatrlname{Assign}} \UnaryInfC{$\langle \hat{h},\hat{\rho},x=y\rangle\hatred{n}\langle \hat{h},\hat{\rho}[x\mapsto \hat{v}],x=\hat{v}\rangle$}
+\end{prooftree}
+\fi
+
+\begin{prooftree}
+\AxiomC{$x\in\dom(\hat{\rho}) \quad \hat{\rho}(y)=a^d \quad \hat{\rho}(z)={z'}^{d'} \quad \hat{h}(a) = \hat{r} \quad \hat{r}(z')=\hat{v}$}
+\LeftLabel{\hatrlname{Ld}} \UnaryInfC{$\langle \hat{h},\hat{\rho},x=y[z]\rangle\hatred{n}\langle \hat{h},\hat{\rho}[x\mapsto (\hat{v}^d)^{d'}],x=(\hat{v}^d)^{d'}\rangle$}
+\end{prooftree}
+
+\begin{prooftree}
+\AxiomC{$\hat{\rho}(x)=a^d \quad \hat{\rho}(y)={y'}^{d'} \quad \hat{h}(a)=\hat{r} \quad \hat{\rho}(z)=\hat{v}$}
+\LeftLabel{\hatrlname{Sto}} \UnaryInfC{$\langle \hat{h},\hat{\rho},x[y]=z\rangle\hatred{n}\langle (\hat{h}[a\mapsto (\hat{r}[y'\mapsto \hat{v}])^{d'}])^d,\hat{\rho},a^d[y'^{d'}]=\hat{v}\rangle$}
+\end{prooftree}
+
+\begin{prooftree}
+\AxiomC{$x\in\dom(\hat{\rho}) \quad \hat{\rho}(y)=\mathit{pv}_1^{d_1} \quad \hat{\rho}(z)=\mathit{pv}_2^{d_2} \quad \mathit{pv}_1\llbracket\diamond\rrbracket\mathit{pv}_2=\mathit{pv}_3$}
+\LeftLabel{\hatrlname{PrimOp}}\UnaryInfC{$\langle \hat{h},\hat{\rho},x=y\diamond z\rangle\red\langle \hat{h},\hat{\rho}[x\mapsto(\mathit{pv}_3^{d_1})^{d_2}],x=(\mathit{pv}_3^{d_1})^{d_2}\rangle$}
+\end{prooftree}
+
+\begin{prooftree}
+\AxiomC{$x\in\dom(\hat{\rho}) \quad \hat{\rho}(f)=(\kw{fun}(z)\>\{\kw{var}\>\overline{x'};\>\overline{s};\>\kw{return}\>z';\},\hat{\rho}')^d \quad \hat{\rho}(y)=\hat{v}$}
+\noLine\UnaryInfC{$\langle\hat{h},\hat{\rho}'[z\mapsto \hat{v},\overline{x'\mapsto\kw{undefined}^!}],\overline{s}\rangle\mhatred{n}\langle \hat{h}',\hat{\rho}'',\hat{t}\rangle \quad \hat{\rho}''(z')=\hat{v}'$}
+\LeftLabel{\hatrlname{Inv}} \UnaryInfC{$\langle \hat{h},\hat{\rho},x=f(y)\rangle\hatred{n}\langle \hat{h}'^d,\hat{\rho}[x\mapsto \hat{v}'^d],(\kw{fun}(\hat{v})\>\{\hat{t}\}^d_{\hat{\rho}'}; x=\hat{v}'^d)\rangle$}
+\end{prooftree}
+
+\begin{prooftree}
+\AxiomC{$\hat{\rho}(x)=v^d \quad v=\kw{true} \quad \langle \hat{h},\hat{\rho},\overline{s}\rangle\mhatred{n}\langle \hat{h}',\hat{\rho}',\hat{t}\rangle$}
+\LeftLabel{\hatrlname{If$_1$}} \UnaryInfC{$\langle \hat{h},\hat{\rho},\kw{if}(x)\{\overline{s}\}\rangle\hatred{n}\langle \hat{h}'[\mathrm{pd}(\hat{t}):=\hat{h}'^d],\hat{\rho}'[\mathrm{vd}(\hat{t}):=\hat{\rho}'^d],\kw{if}(v^d)\{\hat{t}\}\rangle$}
+\end{prooftree}
+
+\begin{prooftree}
+\AxiomC{$\hat{\rho}(x)=v^! \quad v=\kw{false}$}
+\LeftLabel{\hatrlname{If$_2$-Det}}\UnaryInfC{$\langle \hat{h},\hat{\rho},\kw{if}(x)\{\overline{s}\}\rangle\red\langle \hat{h},\hat{\rho},\kw{if}(v^!)\{\}\rangle$}
+\end{prooftree}
+
+\begin{prooftree}
+\AxiomC{$\hat{\rho}(x)=v^? \quad v=\kw{false} \quad n < k \quad \langle \hat{h},\hat{\rho},\overline{s}\rangle\mhatred{n+1}\langle \hat{h}',\hat{\rho}',\hat{t}\rangle$}
+\LeftLabel{\hatrlname{Cntr}} \UnaryInfC{$\langle \hat{h},\hat{\rho},\kw{if}(x)\{\overline{s}\}\rangle\hatred{n}\langle \hat{h}'[\mathrm{pd}(\hat{t}):=\hat{h}^?],\hat{\rho}'[\mathrm{vd}(\hat{t}):=\hat{\rho}^?],\kw{if}(v^?)\{\hat{t}\}\rangle$}
+\end{prooftree}
+
+\begin{prooftree}
+\AxiomC{$\hat{\rho}(x)=v^? \quad v=\kw{false} \quad n \geq k$}
+\LeftLabel{\hatrlname{CntrAbort}} \UnaryInfC{$\langle \hat{h},\hat{\rho},\kw{if}(x)\{\overline{s}\}\rangle\hatred{n}\langle \hat{h}^?,\hat{\rho}[\mathrm{vd}(\overline{s}):=\hat{\rho}^?],\kw{if}(v^?)\{\}\rangle$}
+\end{prooftree}
+
+\ifdetails
+\begin{prooftree}
+\AxiomC{$\langle \hat{h},\hat{\rho},\kw{if}(x)\{\overline{s};\>\kw{while}(x)\{\overline{s}\}\}\>\kw{else}\>\{\}\rangle\hatred{n}\langle \hat{h}',\hat{\rho}',\hat{t}\rangle$}
+\LeftLabel{\hatrlname{While}} \UnaryInfC{$\langle \hat{h},\hat{\rho},\kw{while}(x)\{\overline{s}\}\rangle\hatred{n}\langle \hat{h}',\hat{\rho}',\hat{t}\rangle$}
+\end{prooftree}
+
+\begin{prooftree}
+\AxiomC{$\langle \hat{h}_0,\hat{\rho}_0,s_1\rangle\hatred{n}\langle \hat{h}_1,\hat{\rho}_1,\hat{e}_1\rangle \ldots \langle \hat{h}_{n-1},\hat{\rho}_{n-1},s_s\rangle\hatred{n}\langle \hat{h}_n,\hat{\rho}_n,\hat{e}_n\rangle$}
+\LeftLabel{\hatrlname{Seq}} \UnaryInfC{$\langle \hat{h}_0,\hat{\rho}_0,\overline{s}\rangle\mhatred{n}\langle \hat{h}_n,\hat{\rho}_n,\overline{\hat{e}}\rangle$}
+\end{prooftree}
+\fi
+}}
+
+\caption{Instrumented semantics for determinacy analysis.}\label{fig:annotated-semantics}
+\end{figure}

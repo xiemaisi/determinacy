@@ -1,0 +1,67 @@
+% put here to force it into the right-hand column
+\begin{figure}
+\resizebox{0.9\columnwidth}{!}{%
+\vbox{%
+\begin{prooftree}
+\AxiomC{$x\in\dom(\rho)$}
+\LeftLabel{\rlname{LdLit}}\UnaryInfC{$\langle h,\rho,x=\mathit{pv}\rangle \red \langle h,\rho[x\mapsto\mathit{pv}],x=\mathit{pv}\rangle$}
+\end{prooftree}
+
+\begin{prooftree}
+\AxiomC{$F \equiv \kw{fun}(y)\>\{\>\kw{var}\>\overline{y};\>\overline{s};\>\kw{return}\>z;\>\} \quad x\in\dom(\rho)$}
+\LeftLabel{\rlname{LdClos}}\UnaryInfC{$\langle h,\rho,x=F\rangle \red\langle h,\rho[x\mapsto(F, \rho)],x=(F, \rho)\rangle$}
+\end{prooftree}
+
+\begin{prooftree}
+\AxiomC{$x\in\dom(\rho) \quad a\not\in\dom(\rho)$}
+\LeftLabel{\rlname{LdRec}}\UnaryInfC{$\langle h,\rho,x=\{\}\rangle\red\langle h[a\mapsto\{\}],\rho[x\mapsto a],x=a\rangle$}
+\end{prooftree}
+
+\begin{prooftree}
+\AxiomC{$x\in\dom(\rho) \quad \rho(y)=v$}
+\LeftLabel{\rlname{Assign}}\UnaryInfC{$\langle h,\rho,x=y\rangle\red\langle h,\rho[x\mapsto v],x=v\rangle$}
+\end{prooftree}
+
+\begin{prooftree}
+\AxiomC{$x\in\dom(\rho) \quad \rho(y)=a \quad \rho(z)=z' \quad h(a) = r \quad r(z')=v$}
+\LeftLabel{\rlname{Ld}}\UnaryInfC{$\langle h,\rho,x=y[z]\rangle\red\langle h,\rho[x\mapsto v],x=v\rangle$}
+\end{prooftree}
+
+\begin{prooftree}
+\AxiomC{$\rho(x)=a \quad \rho(y)=y' \quad h(a)=r \quad \rho(z)=v$}
+\LeftLabel{\rlname{Sto}}\UnaryInfC{$\langle h,\rho,x[y]=z\rangle\red\langle h[a\mapsto r[y'\mapsto v]],\rho,a[y']=v\rangle$}
+\end{prooftree}
+
+\begin{prooftree}
+\AxiomC{$x\in\dom(\rho) \> \rho(y)=\mathit{pv}_1 \> \rho(z)=\mathit{pv}_2 \> \mathit{pv}_1\llbracket\diamond\rrbracket\mathit{pv}_2=\mathit{pv}_3$}
+\LeftLabel{\rlname{PrimOp}}\UnaryInfC{$\langle h,\rho,x=y\diamond z\rangle\red\langle h,\rho[x\mapsto\mathit{pv}_3],x=\mathit{pv}_3\rangle$}
+\end{prooftree}
+
+\begin{prooftree}
+\AxiomC{$x\in\dom(\rho) \quad \rho(f)=(\kw{fun}(z)\>\{\kw{var}\>\overline{x'};\overline{s};\>\kw{return}\>y';\},\rho') \quad \rho(y)=v$}
+\noLine\UnaryInfC{$\langle h,\rho'[z\mapsto v,\overline{x'\mapsto\kw{undefined}}],\overline{s}\rangle\mred\langle h',\rho'',t\rangle \quad \rho''(y')=v'$}
+\LeftLabel{\rlname{Inv}}\UnaryInfC{$\langle h,\rho,x=f(y)\rangle\red\langle h',\rho[x\mapsto v'],(\kw{fun}(v)\{t\}_{\rho'}; x=v')\rangle$}
+\end{prooftree}
+
+\begin{prooftree}
+\AxiomC{$\rho(x)=v \quad v=\kw{true} \quad \langle h,\rho,\overline{s}\rangle\mred\langle h',\rho',t\rangle$}
+\LeftLabel{\rlname{If$_1$}}\UnaryInfC{$\langle h,\rho,\kw{if}(x)\{\overline{s}\}\rangle\red\langle h',\rho',\kw{if}(v)\{t\}\rangle$}
+\end{prooftree}
+
+\begin{prooftree}
+\AxiomC{$\rho(x)=v \quad v=\kw{false}$}
+\LeftLabel{\rlname{If$_2$}}\UnaryInfC{$\langle h,\rho,\kw{if}(x)\{\overline{s}\}\rangle\red\langle h,\rho,\kw{if}(v)\{\}\rangle$}
+\end{prooftree}
+
+\begin{prooftree}
+\AxiomC{$\langle h,\rho,\kw{if}(x)\{\overline{s};\>\kw{while}(x)\{\overline{s}\}\}\rangle\red\langle h',\rho',t\rangle$}
+\LeftLabel{\rlname{While}}\UnaryInfC{$\langle h,\rho,\kw{while}(x)\{\overline{s}\}\rangle\red\langle h',\rho',t\rangle$}
+\end{prooftree}
+
+\begin{prooftree}
+\AxiomC{$\langle h_i,\rho_i,s_i\rangle\red\langle h_{i+1},\rho_{i+1},e_i\rangle$}
+\LeftLabel{\rlname{Seq}}\UnaryInfC{$\langle h_0,\rho_0,\overline{s}\rangle\mred\langle h_n,\rho_n,\overline{e}\rangle$}
+\end{prooftree}
+}}
+\caption{Concrete semantics of \muJS}\label{fig:concrete-semantics}
+\end{figure}

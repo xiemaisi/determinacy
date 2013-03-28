@@ -1,0 +1,469 @@
+\documentclass{article}
+\usepackage{authblk}
+\input{macros}
+
+\detailstrue
+\DeclareMathOperator{\adom}{adom}
+
+\definecolor{darkred}{rgb}{0.75,0,0}
+
+\title{Dynamic Determinacy Analysis\\ {\Large\it Soundness Proof}}
+\author[1]{Max Sch\"afer}
+\author[2]{Manu Sridharan}
+\author[2]{Julian Dolby}
+\author[3]{Frank Tip}
+\affil[1]{\small Nanyang Technological University, Singapore}
+\affil[2]{\small IBM T. J. Watson Research Center, Yorktown Heights, NY, USA}
+\affil[2]{\small University of Waterloo, Waterloo, Ontario, Canada}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Soundness of Dynamic Determinacy Analysis}
+This section gives a detailed proof of the soundness theorem.
+
+\input{muJS-concrete}
+\input{concrete-traces}
+\input{concrete-semantic-rules}
+
+To make the presentation self-contained, we repeat Figures~\ref{fig:concrete-domains}, \ref{fig:concrete-traces} and \ref{fig:concrete-semantics} presenting the syntax and concrete semantics of \muJS, and Figures~\ref{fig:instrumented-domains} and \ref{fig:annotated-semantics} presenting the instrumented semantics.
+
+\input{muJS-instrumented}
+\input{instrumented-semantics-rules}
+
+A basic property needed for much of the proof is \emph{well-formedness}: 
+
+\begin{definition}
+A value, record, environment or trace is well-formed with respect to a heap if every address appearing in it belongs to the domain of the heap.
+A heap $h$ is well-formed if every record in its codomain is well-formed with respect to $h$.
+\end{definition}
+
+Clearly, evaluation preserves well-formedness:
+
+\begin{lemma}
+If $h$ is well-formed, $\rho$ is well-formed with respect to $h$,and $\langle h,\rho, s\rangle\red\langle h',\rho',t\rangle$, then $h'$ is well-formed, and $\rho'$ and $t$ are well-formed with respect to $h'$.
+\end{lemma}
+\begin{proof}
+Straightforward induction.
+\end{proof}
+
+A key fact about the modeling relation between values well-formed with respect to some heap $h$ is that it remains valid if we replace $\mu$ by some $\mu'$ that agrees with $\mu$ on $\dom(h)$
+
+\begin{lemma}\label{lem:extend-agree}
+If $\hat{h}\models_{\mu}h$ and $h$ is well-formed, then for any $\mu'$ that agrees with $\mu$ on $\dom(h)$ we also have $\hat{h}\models_{\mu'}h$, and similar for values, records, and environments.
+\end{lemma}
+\begin{proof}
+We prove this by mutual induction.
+
+\begin{enumerate}
+\item First, consider the case of values; we need to show: if $\hat{v}\models_{\mu}v$, then also $\hat{v}\models_{\mu'}v$ for any $\mu'$ that agrees with $\mu$ on $\dom(h)$.
+
+If $\hat{v}$ is indeterminate, then clearly $\hat{v}\models_{\mu'}v$ without any assumptions on $\mu'$. If $\hat{v}=\mathit{pv}^!$, then $v$ must be $\mathit{pv}$, and again $\mathit{pv}^!\models_{\mu'}\mathit{pv}$ for arbitrary $\mu'$. If $\hat{v}=\mu(a)^!$ and $v=a$, then note that $\mu'(a)=\mu(a)$, hence $\mu'(a)^!\models_{\mu'}a$.
+
+Finally, if $\hat{v}$ is $(\kw{fun}(y)\>\{b\},\hat{\rho})^!$ and $v$ is $(\kw{fun}(y)\>\{b\},\rho)$ where $\hat{\rho}\models_{\mu}\rho$, we note that by induction hypothesis $\hat{\rho}\models_{\mu'}\rho$ since $\rho$ must be well-formed; this gives us $\hat{v}\models_{\mu'}v$.
+
+\item For records, we need to show: if $\hat{r}\models_{\mu}r$, then also $\hat{r}\models_{\mu'}r$ for any $\mu'$ that agrees with $\mu$ on $\dom(h)$.
+
+  So consider some name $x$. If $\hat{r}$ does not have a field $x$, then $\hat{r}(x)$ is either $\kw{undefined}^!$ if $r$ is closed, or $\kw{undefined}^?$ if it is open. In the former case, we must have $r(x)=\kw{undefined}$, so $\hat{r}(x)\models_{\mu'}r(x)$; in the latter case, $\hat{r}(x)\models_{\mu'}r(x)$ trivially.
+
+\item For environments, we need to show: if $\hat{\rho}\models_{\mu}\rho$, then also $\hat{\rho}\models_{\mu'}\rho$ for any $\mu'$ that agrees with $\mu$ on $\dom(h)$.
+
+  Consider some $x\in\dom(\rho)$, for which by assumption we have $\hat{\rho}(x)\models_{\mu}\rho(x)$. Since $\rho(x)$ must be well-formed, we can apply the induction hypothesis to get $\hat{\rho}(x)\models_{\mu'}\rho(x)$. Since this holds for arbitrary $x\in\dom(\rho)$, we get $\hat{\rho}\models_{\mu'}\rho$.
+
+\item For heaps, we need to show: if $\hat{h}\models_{\mu}h$, then also $\hat{h}\models_{\mu'}$ for any $\mu'$ that agrees with $\mu$ on $\dom(h)$.
+
+  Consider any $a\in\dom(h)$, for which by assumption we have $\hat{h}(\mu(a))\models_{\mu} h(a)$. Since $h(a)$ must be well-formed, we can apply the induction hypothesis to get $\hat{h}(\mu(a))\models_{\mu'} h(a)$; but clearly $\mu'(a)=\mu(a)$, so $\hat{h}(\mu'(a))\models_{\mu'} h(a)$, and, since $a$ was arbitrary, $\hat{h}\models_{\mu'}h$.
+\end{enumerate}
+\end{proof}
+
+\begin{figure}
+\[
+\begin{array}{lcl}
+\multicolumn{2}{l}{\mathrm{vd} \colon \Event \to \mathcal{P}(\Name)}\\[1mm]
+\mathrm{vd}(x=v) & = & \{x\} \\
+\mathrm{vd}(a[x]=v) & = & \emptyset \\
+\mathrm{vd}(\kw{if}(v)\>\{\overline{e}\}) & = & \bigcup_i\mathrm{vd}(e_i) \\
+\mathrm{vd}(\kw{fun}(v)\>\{\overline{e}\})_{\rho} & = & \emptyset \\
+\\
+\multicolumn{2}{l}{\mathrm{pd} \colon \Event \to \mathcal{P}(\Address\times\Name)}\\[1mm]
+\mathrm{pd}(x=v) & = & \emptyset \\
+\mathrm{pd}(a[x]=v) & = & \{(a,p)\} \\
+\mathrm{pd}(\kw{if}(v)\>\{\overline{e}\}) & = & \bigcup_i\mathrm{pd}(e_i) \\
+\mathrm{pd}(\kw{fun}(v)\>\{\overline{e}\})_{\rho} & = & \bigcup_i\mathrm{pd}(e_i) \\
+\end{array}
+\]
+\caption{Variable and property domains}\label{fig:vd-pd}
+\end{figure}
+
+The variable and property domains of a trace are defined in Figure~\ref{fig:vd-pd}. The main text mentions a simple result establishing the correctness of these definitions that we prove in a bit more detail here.
+
+\begin{lemma}\label{lem:pd-correct}\label{lem:vd-correct}
+If $\langle h,\rho,s\rangle\red\langle h',\rho',t\rangle$, then for any $(a,p)\not\in\mathrm{pd}(t)$ we have $h'(a)(p)=h(a)(p)$, and for any $x\not\in\mathrm{vd}(t)$ we have $\rho'(x)=\rho(x)$.
+\end{lemma}
+\begin{proof}
+To establish the result for $\mathrm{pd}$ we only need to consider rules \rlname{LdRec} and \rlname{Sto}: the other rules either do not change the heap, or the result follows directly from the induction hypothesis. However, for \rlname{LdRec} no property is actually updated, so the result holds vacuously. For \rlname{Sto}, the updated property $a[y']$ appears in the trace, so $(a,y')\in\mathrm{pd}(t)$. 
+
+For $\mathrm{vd}$, simple inspection of the rules shows that whenever $x$ is updated in the resulting environment, it also appears in the trace, and hence in $\mathrm{vd}$.
+\end{proof}
+
+\begin{figure}
+\[
+\begin{array}{lcl}
+\multicolumn{2}{l}{\mathrm{vd} \colon \Stmt \to \mathcal{P}(\Name)}\\[1mm]
+\mathrm{vd}(x=l) & = & \{x\} \\
+\mathrm{vd}(x=y) & = & \{x\} \\
+\mathrm{vd}(x=y[z]) & = & \{x\} \\
+\mathrm{vd}(x[y]=z) & = & \emptyset \\
+\mathrm{vd}(x=y\diamond z) & = & \{x\} \\
+\mathrm{vd}(x=f(y)) & = & \{x\} \\
+\mathrm{vd}(\kw{if}(x)\{\overline{s}\}) & = & \bigcup_i\mathrm{vd}(s_i) \\
+\mathrm{vd}(\kw{while}(x)\{\overline{s}\}) & = & \bigcup_i\mathrm{vd}(s_i) \\
+\end{array}
+\]
+\caption{Syntactic variable domain}\label{fig:syntactic-vd}
+\end{figure}
+
+We can overapproximate $\mathrm{vd}(t)$ by textually scanning the executed code $s$ for all variables it writes (Figure~\ref{fig:syntactic-vd}). This is sound:
+
+\begin{lemma}\label{lem:syntactic-vd}
+If $\langle h,\rho,s\rangle\red\langle h',\rho',t\rangle$, then $\mathrm{vd}(t)\subseteq\mathrm{vd}(s)$.
+\end{lemma}
+\begin{proof}
+Easily seen by inspection of the rules for concrete derivations.
+\end{proof}
+
+When extending environments, we can extend the modeling relation along with it:
+
+\begin{lemma}\label{lem:envext}
+If $\hat{\rho}\models_{\mu}\rho$ and $\hat{v}\models_{\mu} v$, then $\hat{\rho}[x\mapsto\hat{v}]\models_{\mu}\rho[x\mapsto v]$.
+\end{lemma}
+\begin{proof}
+Consider any $y\in\dom(\rho[x\mapsto v])$. If $y=x$, then $\rho[x\mapsto v](y)=v$ and $\hat{\rho}[x\mapsto\hat{v}]=\hat{v}$, but by assumption $\hat{v}\models_{\mu}v$. Otherwise, $\hat{\rho}[x\mapsto\hat{v}](x)=\hat{\rho}(x)\models_{\mu}\rho(x)=\rho[x\mapsto v](x)$.
+\end{proof}
+
+The same result holds for records; for heaps we need injectivity:
+
+\begin{lemma}\label{lem:heapext}
+If $\hat{h}\models_{\mu}h$ and $\mu$ is injective on $\dom(h)\cup\{a\}$, then $\hat{h}[\mu(a)\mapsto\hat{r}]\models_{\mu}h[a\mapsto r]$, whenever $\hat{r}\models_{\mu}r$.
+\end{lemma}
+\begin{proof}
+Consider any $a'\in\dom(h[a\mapsto r])$. If $a'=a$, then $\hat{h}[\mu(a)\mapsto\hat{r}](\mu(a'))=\hat{r}\models_{\mu}r=h[a\mapsto r](a')$. If $a'\neq a$, then by the assumption about injectivity $\mu(a')\neq\mu(a)$, so $\hat{h}[\mu(a)\mapsto\hat{r}](\mu(a'))=\hat{h}(\mu(a'))\models_{\mu}h(a')=h[a\mapsto r](a')$.
+\end{proof}
+
+If we already know that $\hat{h}$ models $h$, then flushing and resetting some properties in $\hat{h}$ will not change this fact:
+
+\begin{lemma}\label{lem:clobber-models}
+If $\hat{h}'\models_{\mu} h$, then $\hat{h}'[A:=\hat{h}^?]\models_{\mu} h$ as well, and likewise for environments.
+\end{lemma}
+\begin{proof}
+We first prove the result for environments.
+
+Let $\hat{\rho}',\hat{\rho}$ be instrumented environments, $\rho$ a concrete environment such that $\hat{\rho}'\models_{\mu}\rho$, and $V$ a set of names. We show $\hat{\rho}'[V:=\hat{\rho}^?]\models_{\mu}\rho$.
+
+Consider some name $x\in\dom(\rho)$. If $x\in\dom(\hat{\rho})\cap V$, then $\hat{\rho}'[V:=\hat{\rho}^?]=\hat{\rho}(x)^?\models_{\mu}\rho(x)$ trivially; otherwise $x$ must still be in $\dom(\hat{\rho}')$ by assumption, so $\hat{\rho}'[V:=\hat{\rho}^?]=\hat{\rho}'(x)\models_{\mu}\rho(x)$ also by assumption.
+
+The result extends to records.
+
+Now consider instrumented heaps $\hat{h},\hat{h}'$ and a concrete heap $h$ such that $\hat{h}'\models_{\mu}h$, and let $A\subseteq\Address\times\Name$ be a set of address-property name pairs. We show $\hat{h}'[A:=\hat{h}^?]\models_{\mu} h$.
+
+So consider $a\in\dom(h)$. By assumption $a\in\dom(\hat{h}')$. If also $a\in\dom(\hat{h})$, we have
+$\hat{h}'[A:=\hat{h}^?](a)=\hat{h}'(a)[A_a:=\hat{h}(a)^?]$, and by the result for records
+$\hat{h}'(a)[A_a:=\hat{h}(a)^?]\models_{\mu} h(a)$ since $\hat{h}'(a)\models_{\mu} h(a)$, which is what we need.
+Otherwise $\hat{h}'[A:=\hat{h}^?](a)=\hat{h}'(a)\models_{\mu} h(a)$ immediately.
+\end{proof}
+
+With these technical results out of the way, we can prove our main theorem.
+
+\begin{theorem}
+If $\langle\hat{h},\hat{\rho},s\rangle\hatred{n}\langle\hat{h}',\hat{\rho}',\hat{t}\rangle$ and 
+  $\langle h,\rho,s\rangle\red\langle h',\rho',t\rangle$ where 
+  $\hat{h}\models_{\mu}h$, $\hat{\rho}\models_{\mu}\rho$,
+  $h$ is well-formed, $\rho$ is well-formed with respect to $h$, and $\mu$ is injective on $\dom(d)$;
+then 
+  $\hat{h}'\models_{\mu'} h'$, $\hat{\rho}'\models_{\mu'}\rho'$ and $\hat{t}\models_{\mu'} t$ for some $\mu'$ such that $\forall a\in\dom(h).\mu(a)=\mu'(a)$ and $\mu'$ is injective on $\dom(h')$.
+\end{theorem}
+\begin{proof}
+The proof proceeds by induction on the derivation of $\langle\hat{h},\hat{\rho},s\rangle\hatred{n}\langle\hat{h}',\hat{\rho}',\hat{t}\rangle$, with a case distinction on the last rule used in the derivation.
+\begin{enumerate}
+\item Case \hatrlname{LdLit}:
+
+  The instrumented derivation must be of the form 
+
+    \begin{prooftree}
+      \AxiomC{$x\in\dom(\hat{\rho})$}
+      \UnaryInfC{$\langle\hat{h},\hat{\rho},x=\mathit{pv}\rangle\hatred{n}\langle\hat{h},\hat{\rho}[x\mapsto\mathit{pv}^!],x=\mathit{pv}^!\rangle$}
+    \end{prooftree}
+
+  The concrete derivation must be of the form
+
+    \begin{prooftree}
+      \AxiomC{$x\in\dom(\rho)$}
+      \UnaryInfC{$\langle h,\rho,x=\mathit{pv}\rangle\red\langle h,\rho[x\mapsto\mathit{pv}],x=\mathit{pv}\rangle$}
+    \end{prooftree}
+
+  We choose $\mu':=\mu$, which is injective on $\dom(h')=\dom(h)$. By assumption, $\hat{h}\models_{\mu}h$ and $\hat{\rho}\models_{\mu}\rho$. This immediately gives $\hat{h}\models_{\mu'}h$. Since $\mathit{pv}^!\models_{\mu'}\mathit{pv}$ we also have $\hat{\rho}[x\mapsto\mathit{pv}^!]\models_{\mu'}\rho[x\mapsto\mathit{pv}]$ (by Lemma~\ref{lem:envext}) and $x=\mathit{pv}^!\models_{\mu'}x=\mathit{pv}$, as required.
+\item Case \hatrlname{LdClos}:
+
+  The instrumented derivation must be of the form
+
+  \begin{prooftree}
+    \AxiomC{$x\in\dom(\hat{\rho})$}
+    \UnaryInfC{$\langle\hat{h},\hat{\rho},x=\kw{fun}(y)\>\{b\}\rangle\hatred{n}\langle\hat{h},\hat{\rho}[x\mapsto(\kw{fun}(y)\>\{b\},\hat{\rho})^!],x=(\kw{fun}(y)\>\{b\},\hat{\rho})^!\rangle$}
+  \end{prooftree}
+
+  and the concrete derivation is
+
+  \begin{prooftree}
+    \AxiomC{$x\in\dom(\rho)$}
+    \UnaryInfC{$\langle h,\rho,x=\kw{fun}(y)\>\{b\}\rangle\red\langle h,\rho[x\mapsto(\kw{fun}(y)\>\{b\},\rho)],x=(\kw{fun}(y)\>\{b\},\rho)\rangle$}
+  \end{prooftree}
+
+  We again choose $\mu':=\mu$ and argue as in the previous case, noting that $(\kw{fun}(y)\>\{b\},\hat{\rho})^!\models_{\mu'}(\kw{fun}(y)\>\{b\},\rho)$ since $\hat{\rho}\models_{\mu'}\rho$ by assumption.
+\item Case \hatrlname{LdRec}:
+
+  The instrumented derivation must be of the form
+  
+  \begin{prooftree}
+    \AxiomC{$x\in\dom(\hat{\rho})$} \AxiomC{$a'\not\in\dom(h)$}
+    \LeftLabel{\hatrlname{LdRec}} \BinaryInfC{$\langle \hat{h},\hat{\rho},x=\{\}\rangle\hatred{n}\langle \hat{h}[a'\mapsto\{\}],\hat{\rho}[x\mapsto a'^!],x=a'^!\rangle$}
+  \end{prooftree}
+
+  and the concrete derivation must be of the form
+
+  \begin{prooftree}
+    \AxiomC{$x\in\dom(\rho)$} \AxiomC{$a\not\in\dom(h)$}
+    \LeftLabel{\rlname{LdRec}}\BinaryInfC{$\langle h,\rho,x=\{\}\rangle\red\langle h[a\mapsto\{\}],\rho[x\mapsto a],x=a\rangle$}
+  \end{prooftree}
+
+  We choose $\mu':=\mu[a\mapsto a']$, which agrees with $\mu$ on $\dom(h)$ as required (since $a\not\in\dom(h)$), and is injective on $\dom(h')=\dom(h)\cup\{a\}$ (since there cannot be an $a_0\in\dom(h)$ with $\mu(a_0)=a'$).
+
+  By Lemma~\ref{lem:extend-agree}, we have $\hat{h}\models_{\mu'}h$ and $\hat{\rho}\models_{\mu'}\rho$, from which the result follows by Lemmas~\ref{lem:envext} and~\ref{lem:heapext}, since $a'^!=\mu'(a)^!\models_{\mu'}a$ and trivially $\{\}\models_{\mu'}\{\}$.
+\item Case \hatrlname{Assign}:
+
+  The instrumented derivation must be of the form
+
+  \begin{prooftree}
+    \AxiomC{$x\in\dom(\hat{\rho})$} \AxiomC{$\hat{\rho}(y)=\hat{v}$}
+    \LeftLabel{\hatrlname{Assign}} \BinaryInfC{$\langle \hat{h},\hat{\rho},x=y\rangle\hatred{n}\langle \hat{h},\hat{\rho}[x\mapsto \hat{v}],x=\hat{v}\rangle$}
+  \end{prooftree}
+
+
+  and the concrete derivation must be of the form
+
+  \begin{prooftree}
+    \AxiomC{$x\in\dom(\rho)$} \AxiomC{$\rho(y)=v$}
+    \LeftLabel{\rlname{Assign}}\BinaryInfC{$\langle h,\rho,x=y\rangle\red\langle h,\rho[x\mapsto v],x=v\rangle$}
+  \end{prooftree}
+
+  We choose $\mu':=\mu$. The result follows by Lemma~\ref{lem:envext}, since $\hat{v}\models_{\mu}v$.
+
+\item Case \hatrlname{Ld}:
+
+  The instrumented derivation must be of the form
+
+  \begin{prooftree}
+    \AxiomC{$x\in\dom(\hat{\rho}) \quad \hat{\rho}(y)=a'^{d_1} \quad \hat{\rho}(z)={p'}^{d_2} \quad \hat{h}(a') = \hat{r} \quad \hat{r}(p')=\hat{v}$}
+    \LeftLabel{\hatrlname{Ld}} \UnaryInfC{$\langle \hat{h},\hat{\rho},x=y[z]\rangle\hatred{n}\langle \hat{h},\hat{\rho}[x\mapsto (\hat{v}^{d_1})^{d_2}],x=(\hat{v}^{d_1})^{d_2}\rangle$}
+  \end{prooftree}
+
+  and the concrete derivation must be of the form
+
+  \begin{prooftree}
+    \AxiomC{$x\in\dom(\rho) \quad \rho(y)=a \quad \rho(z)=p \quad h(a) = r \quad r(p)=v$}
+    \LeftLabel{\rlname{Ld}}\UnaryInfC{$\langle h,\rho,x=y[z]\rangle\red\langle h,\rho[x\mapsto v],x=v\rangle$}
+  \end{prooftree}
+
+  We choose $\mu':=\mu$ and note that $\dom(h')=\dom(h)$; all we need to show is $(\hat{v}^{d_1})^{d_2}\models_{\mu}v$. If either $d_1=?$ or $d_2=?$, this is immediate; so let us consider the case where $d_1=d_2=!$.
+
+  Then we must have $a'=\mu(a)$ since $\hat{\rho}\models_{\mu}\rho$ by assumption, which gives us $\hat{r}\models_{\mu}r$ since $\hat{h}\models_{\mu}h$ by assumption. But then we note that also $p'=p$ (again by $\hat{\rho}\models_{\mu}\rho$), so $\hat{v}\models_{\mu}v$, which is what we need.
+
+\item Case \hatrlname{Sto}:
+
+  The instrumented derivation must be of the form
+
+  \begin{prooftree}
+    \AxiomC{$\hat{\rho}(x)=a'^{d_1} \quad \hat{\rho}(y)={p'}^{d_2} \quad \hat{h}(a')=\hat{r} \quad \hat{\rho}(z)=\hat{v}$}
+    \LeftLabel{\hatrlname{Sto}} \UnaryInfC{$\langle \hat{h},\hat{\rho},x[y]=z\rangle\hatred{n}\langle (\hat{h}[a'\mapsto (\hat{r}[p'\mapsto \hat{v}])^{d_2}])^{d_1},\hat{\rho},a'^{d_1}[p'^{d_2}]=\hat{v}\rangle$}
+  \end{prooftree}
+  
+  and the concrete derivation must be of the form
+
+  \begin{prooftree}
+    \AxiomC{$\rho(x)=a \quad \rho(y)=p \quad h(a)=r \quad \rho(z)=v$}
+    \LeftLabel{\rlname{Sto}}\UnaryInfC{$\langle h,\rho,x[y]=z\rangle\red\langle h[a\mapsto r[p\mapsto v]],\rho,a[p]=v\rangle$}
+  \end{prooftree}
+
+  We choose $\mu':=\mu$ and note that $\dom(h')=\dom(h)$. Clearly, $a'^{d_1}\models_{\mu}a$, $p'^{d_2}\models p$ and $\hat{v}\models_{\mu}v$ by the assumption that $\hat{\rho}\models_{\mu}\rho$, so $a'^{d_1}[p'^{d_2}]=\hat{v}\models_{\mu}a'[p']=v$.
+
+  It remains to show that $(\hat{h}[a'\mapsto (\hat{r}[p'\mapsto \hat{v}])^{d_2}])^{d_1}\models_{\mu}h[a\mapsto r[p\mapsto v]]$.
+
+  Let us first consider the case where $d_1=!$. Then $a'=\mu(a)$, and we can apply Lemma~\ref{lem:heapext}, which gives the result if we can show that 
+  $$(\hat{r}[p'\mapsto \hat{v}])^{d_2}\models_{\mu'}r[p\mapsto v]$$
+
+  This is clearly true if $d_2=?$. If $d_2=!$, we note that $p'=p$ and $\hat{v}\models_{\mu}v$, so it is also true.
+
+  Now consider $d_1=?$; then every record in the heap is made indeterminate, which also gives the result.
+
+\item Case \hatrlname{PrimOp}:
+
+  The instrumented derivation must be of the form
+
+  \begin{prooftree}
+    \AxiomC{$x\in\dom(\hat{\rho}) \quad \hat{\rho}(y)=\mathit{pv'}_1^{d_1} \quad \hat{\rho}(z)=\mathit{pv'}_2^{d_2} \quad \mathit{pv'}_1\llbracket\circ\rrbracket\mathit{pv'}_2=\mathit{pv'}_3$}
+    \LeftLabel{\hatrlname{PrimOp}}\UnaryInfC{$\langle \hat{h},\hat{\rho},x=y\circ z\rangle\red\langle \hat{h},\hat{\rho}[x\mapsto(\mathit{pv'}_3^{d_1})^{d_2}],x=(\mathit{pv'}_3^{d_1})^{d_2}\rangle$}
+  \end{prooftree}
+
+  and the concrete derivation must be of the form
+
+  \begin{prooftree}
+    \AxiomC{$x\in\dom(\rho) \quad \rho(y)=\mathit{pv}_1 \quad \rho(z)=\mathit{pv}_2 \quad \mathit{pv}_1\llbracket\circ\rrbracket\mathit{pv}_2=\mathit{pv}_3$}
+    \LeftLabel{\rlname{PrimOp}}\UnaryInfC{$\langle h,\rho,x=y\circ z\rangle\red\langle h,\rho[x\mapsto\mathit{pv}_3],x=\mathit{pv}_3\rangle$}
+  \end{prooftree}
+
+  We choose $\mu':=\mu$. All that remains to show is $(\mathit{pv'}_3^{d_1})^{d_2}\models_{\mu}\mathit{pv}_3$. This is easy if $d_1=?$ or $d_2=?$; if $d_1=d_2=!$, then $\mathit{pv'}_i=\mathit{pv}_i$ for $i\in\{1,2\}$, so also $\mathit{pv'}_3=\mathit{pv}_3$, which is what we want.
+
+\item Case \hatrlname{Inv}:
+
+  The instrumented derivation must be of the form
+
+  \begin{prooftree}
+    \AxiomC{$x\in\dom(\rho) \quad \hat{\rho}(f)=(\kw{fun}(z')\>\{\kw{var}\>\overline{l'};\>\overline{s'};\>\kw{return}\>u';\},\hat{\rho}')^d \quad \hat{\rho}(y)=\hat{v}$}
+    \noLine\UnaryInfC{$\langle\hat{h},\hat{\rho}'[\overline{z'\mapsto \hat{v}},\overline{l'\mapsto\kw{undefined}^!}],\overline{s'}\rangle\mhatred{n}\langle \hat{h}',\hat{\rho}'',\hat{t}\rangle \quad \hat{\rho}''(u')=\hat{v}'$}
+    \LeftLabel{\hatrlname{Inv}} \UnaryInfC{$\langle \hat{h},\hat{\rho},x=f(y)\rangle\hatred{n}\langle \hat{h}'^d,\hat{\rho}[x\mapsto \hat{v}'^d],(\kw{fun}(\overline{\hat{v}})\>\{\hat{t}\}^d_{\hat{\rho}'}; x=\hat{v}'^d)\rangle$}
+  \end{prooftree}
+  
+  and the concrete derivation must be of the form
+
+  \begin{prooftree}
+    \AxiomC{$x\in\dom(\rho) \quad \rho(f)=(\kw{fun}(z)\>\{\kw{var}\>\overline{l};\overline{s};\>\kw{return}\>u;\},\rho') \quad \rho(y)=v$}
+    \noLine\UnaryInfC{$\langle h,\rho'[\overline{z\mapsto v},\overline{l\mapsto\kw{undefined}}],\overline{s}\rangle\mred\langle h',\rho'',t\rangle \quad \rho''(u)=v'$}
+    \LeftLabel{\rlname{Inv}}\UnaryInfC{$\langle h,\rho,x=f(y)\rangle\red\langle h',\rho[x\mapsto v'],(\kw{fun}(\overline{v})\{t\}_{\rho'}; x=v')\rangle$}
+  \end{prooftree}
+
+  If $d=?$, we choose $\mu'$ to be an injective extension of $\mu$ that maps addresses in $\dom(h')\setminus\dom(h)$ to arbitrary addresses not in $\dom(h)$. The result is then obvious.
+
+  If $d=!$, we infer that $z'=z$, $l'=l$, $\overline{s'}=\overline{s}$, $u'=u$, $\hat{\rho}'\models_{\mu}\rho'$, and also $\hat{v}\models_{\mu}v$. Applying the induction hypothesis, we get $\mu'$ such that $\hat{h}'\models_{\mu'}h'$, $\hat{\rho}''\models_{\mu'}\rho''$, and $\hat{t}\models_{\mu'}t$. This means that $\hat{v}'\models_{\mu'}v'$, so we are done.
+  
+\item Case \hatrlname{If$_1$}:
+
+  The instrumented derivation must be of the form
+
+  \begin{prooftree}
+    \AxiomC{$\hat{\rho}(x)=v'^d \quad v'=\kw{true} \quad \langle \hat{h},\hat{\rho},\overline{s}\rangle\mhatred{n}\langle \hat{h}',\hat{\rho}',\hat{t}\rangle$}
+    \LeftLabel{\hatrlname{If$_1$}} \UnaryInfC{$\langle \hat{h},\hat{\rho},\kw{if}(x)\{\overline{s}\}\rangle\hatred{n}\langle \hat{h}'[\mathrm{pd}(\hat{t}):=\hat{h}'^d],\hat{\rho}'[\mathrm{vd}(\hat{t}):=\hat{\rho}'^d],\kw{if}(v'^d)\{\hat{t}\}\rangle$}
+  \end{prooftree}
+
+  In general, the concrete execution may either use \rlname{If$_1$} or \rlname{If$_2$}. In the former case, it is of the form
+
+  \begin{prooftree}
+    \AxiomC{$\rho(x)=v \quad v=\kw{true} \quad \langle h,\rho,\overline{s}\rangle\mred\langle h',\rho',t\rangle$}
+    \LeftLabel{\rlname{If$_1$}}\UnaryInfC{$\langle h,\rho,\kw{if}(x)\{\overline{s}\}\rangle\red\langle h',\rho',\kw{if}(v)\{t\}\rangle$}
+  \end{prooftree}
+
+  Applying the induction hypothesis, we get $\mu'$ such that $\hat{h}'\models_{\mu'}h'$, $\hat{\rho}'\models_{\mu'}\rho'$ and $\hat{t}\models_{\mu'}t$, and this $\mu'$ agrees with $\mu$ on $\dom(h)$. By assumption we have $v'^d\models_{\mu}v$, and hence by Lemma~\ref{lem:extend-agree} also $v'^d\models_{\mu'}v$. By Lemma~\ref{lem:clobber-models} we get $\hat{h}'[\mathit{pd}(\hat{t}):=\hat{h}'^d]\models_{\mu'}h'$ and $\hat{\rho}'[\mathit{vd}(\hat{t}):=\hat{\rho}'^d]\models_{\mu'}\rho'$, and so finally the result.
+
+  If the concrete execution uses \rlname{If$_2$}, it is of the form
+
+  \begin{prooftree}
+    \AxiomC{$\rho(x)=v \quad v=\kw{false}$}
+    \LeftLabel{\rlname{If$_2$}}\UnaryInfC{$\langle h,\rho,\kw{if}(x)\{\overline{s}\}\rangle\red\langle h,\rho,\kw{if}(v)\{\}\rangle$}
+  \end{prooftree}
+
+  Since $v'^d\models_{\mu}v$ and $v'$ and $v$ have different ``truthiness'', this can only happen if $d=?$.
+
+  We choose $\mu':=\mu$, so all that remains to show is that $\hat{h}'[\mathit{pd}(\hat{t}):=\hat{h}'^?]\models_{\mu'}h$ and $\hat{\rho}'[\mathit{vd}(\hat{t}):=\hat{\rho}'^?]\models_{\mu'}\rho$.
+
+  For the former, consider some $a\in\dom(h)$; we need to show that $\forall p.\hat{h}'[\mathit{pd}(\hat{t}):=\hat{h}'^?](\mu'(a))(p)\models_{\mu'}h(a)(p)$. If $(\mu'(a),p)\in\mathit{pd}(\hat{t})$, then the left hand side is indeterminate, so we are done. Otherwise, we know by Lemma~\ref{lem:pd-correct} that $\hat{h}'[\mathit{pd}(\hat{t}):=\hat{h}'^?](\mu'(a))(p)=\hat{h}'(\mu'(a))(p)=\hat{h}(\mu'(a))(p)$, and since $\mu'$ must agree with $\mu$ on $a$, we get the result.
+  
+  The result for the environment follows by a similar appeal to Lemma~\ref{lem:vd-correct}.
+
+\item Case \hatrlname{If$_2$-Det}:
+
+  The instrumented derivation must be of the form
+
+  \begin{prooftree}
+    \AxiomC{$\hat{\rho}(x)=v'^! \quad v'=\kw{false}$}
+    \LeftLabel{\hatrlname{If$_2$-Det}}\UnaryInfC{$\langle \hat{h},\hat{\rho},\kw{if}(x)\{\overline{s}\}\rangle\red\langle \hat{h},\hat{\rho},\kw{if}(v'^!)\{\}\rangle$}
+  \end{prooftree}
+
+  and the concrete derivation must be of the form
+
+  \begin{prooftree}
+    \AxiomC{$\rho(x)=v \quad v=\kw{false}$}
+    \LeftLabel{\rlname{If$_2$}}\UnaryInfC{$\langle h,\rho,\kw{if}(x)\{\overline{s}\}\rangle\red\langle h,\rho,\kw{if}(v)\{\}\rangle$}
+  \end{prooftree}
+
+  Choosing $\mu':=\mu$, the result is obvious.
+  
+\item Case \hatrlname{Cntr}:
+
+  The instrumented derivation must be of the form
+
+  \begin{prooftree}
+    \AxiomC{$\hat{\rho}(x)=v'^? \quad v'=\kw{false} \quad n < k \quad \langle \hat{h},\hat{\rho},\overline{s}\rangle\mhatred{n+1}\langle \hat{h}',\hat{\rho}',\hat{t}\rangle$}
+    \LeftLabel{\hatrlname{Cntr}} \UnaryInfC{$\langle \hat{h},\hat{\rho},\kw{if}(x)\{\overline{s}\}\rangle\hatred{n}\langle \hat{h}'[\mathrm{pd}(\hat{t}):=\hat{h}^?],\hat{\rho}'[\mathrm{vd}(\hat{t}):=\hat{\rho}^?],\kw{if}(v'^?)\{\hat{t}\}\rangle$}
+  \end{prooftree}
+
+  The concrete derivation can proceed either by \rlname{If$_1$} or \rlname{If$_2$}.
+
+  In the former case, it must be of the form
+
+  \begin{prooftree}
+    \AxiomC{$\rho(x)=v \quad v=\kw{true} \quad \langle h,\rho,\overline{s}\rangle\mred\langle h',\rho',t\rangle$}
+    \LeftLabel{\rlname{If$_1$}}\UnaryInfC{$\langle h,\rho,\kw{if}(x)\{\overline{s}\}\rangle\red\langle h',\rho',\kw{if}(v)\{t\}\rangle$}
+  \end{prooftree}
+
+  We apply the induction hypothesis to obtain $\mu'$ agreeing with $\mu$ on $\dom(h)$ such that $\hat{h}'\models_{\mu'}h$, $\hat{\rho}'\models_{\mu'}\rho'$ and $\hat{t}\models_{\mu'} t$. By Lemma~\ref{lem:clobber-models} also $\hat{h}'[\mathrm{pd}(\hat{t}):=\hat{h}^?]\models h'$ and $\hat{\rho}'[\mathrm{vd}(\hat{t}):=\hat{\rho}^?]\models \rho'$, and we are done.
+
+  In the latter case, it must be of the form
+  
+  \begin{prooftree}
+    \AxiomC{$\rho(x)=v \quad v=\kw{false}$}
+    \LeftLabel{\rlname{If$_2$}}\UnaryInfC{$\langle h,\rho,\kw{if}(x)\{\overline{s}\}\rangle\red\langle h,\rho,\kw{if}(v)\{\}\rangle$}
+  \end{prooftree}
+
+  Choosing $\mu':=\mu$, we observe that by Lemma~\ref{lem:pd-correct} $\hat{h}'$ must agree with $\hat{h}$ on all $(a,p)\not\in\mathrm{pd}(\hat{t})$; but the latter are made indeterminate in the resulting heap, so $\hat{h}'[\mathrm{pd}(\hat{t}):=\hat{h}^?]\models_{\mu'}h$. Similar reasoning shows $\hat{\rho}'[\mathrm{vd}(\hat{t}):=\hat{\rho}^?]\models_{\mu'}\rho$, which is what we need.
+
+\item Case \hatrlname{CntrAbort}:
+
+  The instrumented derivation must be of the form
+
+  \begin{prooftree}
+    \AxiomC{$\hat{\rho}(x)=v'^? \quad v'=\kw{false} \quad n > k$}
+    \LeftLabel{\hatrlname{CntrAbort}} \UnaryInfC{$\langle \hat{h},\hat{\rho},\kw{if}(x)\{\overline{s}\}\rangle\hatred{n}\langle \hat{h}^?,\hat{\rho}[\mathrm{vd}(\overline{s}):=\hat{\rho}^?],\kw{if}(v'^?)\{\}\rangle$}
+  \end{prooftree}
+
+  The concrete derivation may either use \rlname{If$_1$} or \rlname{If$_2$} as its last rule.
+
+  In the former case, it must be of the form
+
+  \begin{prooftree}
+    \AxiomC{$\rho(x)=v \quad v=\kw{true} \quad \langle h,\rho,\overline{s}\rangle\mred\langle h',\rho',t\rangle$}
+    \LeftLabel{\rlname{If$_1$}}\UnaryInfC{$\langle h,\rho,\kw{if}(x)\{\overline{s}\}\rangle\red\langle h',\rho',\kw{if}(v)\{t\}\rangle$}
+  \end{prooftree}
+
+  For $\mu'$, we choose an injective extension of $\mu$ that maps addresses in $\dom(h')\setminus\dom(h)$ to arbitrary addresses not in $\dom(\hat{h})$.
+
+  Then clearly $\hat{h}^?\models_{\mu'} h'$. To see $\hat{\rho}[\mathrm{vd}(\overline{s}):=\hat{\rho}^?]\models_{\mu'}\rho'$, consider some name $x\in\dom(\rho')$. If $x\in\mathrm{vd}(\overline{s})$, then obviously $\hat{\rho}[\mathrm{vd}(\overline{s}):=\hat{\rho}^?](x)\models_{\mu'}\rho'(x)$; otherwise, $\rho'(x)=\rho(x)$ by Lemma~\ref{lem:syntactic-vd} and Lemma~\ref{lem:vd-correct}, so $\hat{\rho}[\mathrm{vd}(\overline{s}):=\hat{\rho}^?](x)=\hat{\rho}(x)\models_{\mu'}\rho(x)=\rho'(x)$.
+
+  If the concrete derivation uses \rlname{If$_2$}, it must be of the form
+
+  \begin{prooftree}
+    \AxiomC{$\rho(x)=v \quad v=\kw{false}$}
+    \LeftLabel{\rlname{If$_2$}}\UnaryInfC{$\langle h,\rho,\kw{if}(x)\{\overline{s}\}\rangle\red\langle h,\rho,\kw{if}(v)\{\}\rangle$}
+  \end{prooftree}
+
+  and the result follows immediately, choosing $\mu':=\mu$.
+
+\item Case \hatrlname{While}:
+
+  Direct appeal to induction hypothesis.
+
+\item Case \hatrlname{Seq}:
+
+  Appeal to induction hypothesis; note that the $\mu'$ of the $i$th subderivation can be used as the $\mu$ of the $i+1$th subderivation.
+\end{enumerate}
+\end{proof}
+
+\end{document}

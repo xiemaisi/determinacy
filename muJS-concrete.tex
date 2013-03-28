@@ -1,0 +1,25 @@
+\begin{figure}
+\[\begin{array}{lcll}
+l \in \Literal & ::= & \mathit{pv} & \text{primitive value} \\
+            & \mid & \kw{fun}(x)\>\{ & \text{function value} \\
+            &      & \quad\kw{var}\>\overline{y};\>\overline{s};\>\kw{return}\>z;\\
+            &      & \} \\
+            & \mid & \{\} & \text{empty record} \\
+\\
+s \in \Stmt & ::=  & x = l & \text{literal load} \\
+            & \mid & x = y & \text{variable copy} \\
+            & \mid & x = y[z] & \text{property load} \\
+            & \mid & x[y] = z & \text{property store} \\
+            & \mid & x = y \diamond z & \text{primitive operator} \\
+            & \mid & x = f(y) & \text{function call} \\
+            & \mid & \kw{if}(x) \{ \overline{s} \} & \text{conditional} \\
+            & \mid & \kw{while}(x) \{ \overline{s} \} & \text{loop} \\
+\\
+\multicolumn{4}{l}{x,y,z,f\in\Name;\>\diamond \in \PrimOp;\>\mathit{pv} \in \PrimVal; a \in \Address} \\
+v \in \Value & ::= & \multicolumn{2}{l}{\mathit{pv} \mid a \mid (\kw{fun}(x)\>\{b\}, \rho)} \\
+r \in \Record & ::= & \{\overline{x\colon v}\} \\
+\rho \in \Env & := & \Name \rightharpoonup \Value \\
+h \in \Heap & := & \Address \rightharpoonup \Record \\
+\end{array}\]
+\caption{Syntax and semantic domains of \muJS; $b$ abbreviates function bodies}\label{fig:concrete-domains}
+\end{figure}

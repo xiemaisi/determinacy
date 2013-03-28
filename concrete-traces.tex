@@ -1,0 +1,10 @@
+\begin{figure}
+\[\begin{array}{lcll}
+e \in \Event & ::= & x = v & \text{variable write} \\
+             & \mid & a[x] = v & \text{heap write} \\
+             & \mid & \kw{if}(v)\{t\} & \text{conditional} \\
+             & \mid & \kw{fun}(v)\{t\}_\rho & \text{function call} \\
+t \in \Trace & := & \overline{e}
+\end{array}\]
+\caption{Concrete execution traces}\label{fig:concrete-traces}
+\end{figure}
